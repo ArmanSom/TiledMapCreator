@@ -6,7 +6,6 @@
 #ifndef __game__editor__
 #define __game__editor__
 
-#include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <string>
 

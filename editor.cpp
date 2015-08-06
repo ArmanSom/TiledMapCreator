@@ -4,6 +4,7 @@
 //Editor source
 
 #include "editor.h"
+#include "tile.h"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -22,11 +23,11 @@ Editor::Editor()
     /*TEST*/
     
     //create outline for right section
-    rightSection = new sf::RectangleShape(sf::Vector2f(RIGHT_SECTION_WIDTH - 5, WINDOW_HEIGHT - 10));
-    rightSection->setFillColor(sf::Color::Black);
+    rightSection = new sf::RectangleShape(sf::Vector2f(RIGHT_SECTION_WIDTH, WINDOW_HEIGHT));
+    rightSection->setFillColor(sf::Color::Transparent);
     rightSection->setOutlineColor(sf::Color::White);
     rightSection->setOutlineThickness(5);
-    rightSection->setPosition(WINDOW_WIDTH*3/4, 5);
+    rightSection->setPosition(WINDOW_WIDTH*3/4, 0);
     
     //set arbitrary tile defaults
     tileWidth = 30;
@@ -273,21 +274,76 @@ void Editor::editor()
     }
     
     //create vector to hold all tile sprites
-    std::vector<sf::Sprite> tileSprites;
+    std::vector<Tile> tileSprites;
     int sheetWidth = tileSheet.getSize().x;
     int sheetHeight = tileSheet.getSize().y;
     int widthProgress = 0;
     int heightProgress = 0;
-    while (widthProgress < sheetWidth && heightProgress < sheetHeight)
+    count = 0;
+    while (widthProgress <= sheetWidth && heightProgress <= sheetHeight)
     {
-        sf::Sprite sprite;
-        sprite.setTexture(tileSheet);
-        sprite.setTextureRect(sf::IntRect(widthProgress, heightProgress, tileWidth, tileHeight));
-        tileSprites.push_back(sprite);
-        widthProgress += tileWidth + tileMargins;
-        if (widthProgress > sheetWidth)
-            { widthProgress = 0; heightProgress += tileHeight + tileMargins; }
+        Tile tile(count + 1);
+        tile.setTexture(tileSheet);
+        tile.setTextureRect(sf::IntRect(widthProgress, heightProgress, tileWidth, tileHeight));
+        tileSprites.push_back(tile);
+        heightProgress += tileHeight + tileMargins;
+        if (heightProgress >= sheetHeight)
+            { heightProgress = 0; widthProgress += tileWidth + tileMargins; }
+        ++count;
     }
+    
+    //create vectors to hold subsets of tile sprites in right section
+    int RSrows = WINDOW_HEIGHT/(tileHeight + tileMargins);
+    int RScolumns = RIGHT_SECTION_WIDTH/(tileWidth + tileMargins);
+    size_t vectorAmount;
+    if (tileSprites.size()%RSrows*RScolumns == 0)
+        vectorAmount = tileSprites.size()/(RSrows*RScolumns);
+    else
+        vectorAmount = tileSprites.size()/(RSrows*RScolumns) + 1;
+    std::vector<std::vector<Tile>> tileSelectionSprites(vectorAmount);
+    count = 0;
+    for (int i = 0; i < vectorAmount; ++i)
+    {
+        int columnsProgress = 0;
+        int rowsProgress = 0;
+        while (columnsProgress < RScolumns && rowsProgress < RSrows && count < tileSprites.size())
+        {
+            tileSprites[count].x = columnsProgress*(tileWidth + tileMargins) + WINDOW_WIDTH - RIGHT_SECTION_WIDTH;
+            tileSprites[count].y = rowsProgress*(tileHeight + tileMargins);
+            tileSprites[count].setPosition(tileSprites[count].x, tileSprites[count].y);
+            tileSelectionSprites[i].push_back(tileSprites[count]);
+            ++count;
+            ++columnsProgress;
+            if (columnsProgress >= RScolumns)
+                { columnsProgress = 0; ++rowsProgress; }
+        }
+    }
+    
+    //create rectangle to hover over selected tile in right section
+    sf::RectangleShape tileOutline(sf::Vector2f(tileWidth - 10, tileHeight - 10));
+    tileOutline.setFillColor(sf::Color::Transparent);
+    tileOutline.setOutlineColor(sf::Color::White);
+    tileOutline.setOutlineThickness(5);
+    tileOutline.setPosition(tileSelectionSprites[0][0].x + 5, tileSelectionSprites[0][0].y + 5);
+    
+    //create buffer to help load tile from selection to grid
+    Tile tileBuffer = tileSprites[0];
+    
+    //create vectors to hold tiles to be used in the grid
+    std::vector<std::vector<Tile>> grid(tileRows);
+    for (int i = 0; i < tileRows; ++i)
+        for (int j = 0; j < tileColumns; ++j)
+        {
+            grid[i].push_back(Tile());
+            grid[i][j].setPosition(tileWidth*i, tileHeight*j);
+        }
+    
+    //create trackers
+    int tileGroupSelected = 0;
+    bool focusRight = true;
+    int mouseXPos = 0;
+    int mouseYPos = 0;
+    int tileSelected = 0;
     
     //MAIN LOOP
     while (level == EDITOR)
@@ -299,14 +355,81 @@ void Editor::editor()
             //window close condition
             if (event.type == sf::Event::Closed)
                 level = END;
+            
+            //key press conditions
+            if (event.type == sf::Event::KeyPressed)
+            {
+                //if mouse last clicked right section
+                if (focusRight == true)
+                {
+                    //down condition
+                    if (event.key.code == sf::Keyboard::Down)
+                    {
+                        if (tileGroupSelected < vectorAmount - 1)
+                        {
+                            ++tileGroupSelected;
+                            tileOutline.setPosition(tileSelectionSprites[tileGroupSelected][0].x + 5, tileSelectionSprites[tileGroupSelected][0].y + 5);
+                            tileBuffer = tileSelectionSprites[tileGroupSelected][0];
+                        }
+                    }
+                    //up condition
+                    if (event.key.code == sf::Keyboard::Up)
+                    {
+                        if (tileGroupSelected > 0)
+                        {
+                            --tileGroupSelected;
+                            tileOutline.setPosition(tileSelectionSprites[tileGroupSelected][0].x + 5, tileSelectionSprites[tileGroupSelected][0].y + 5);
+                            tileBuffer = tileSelectionSprites[tileGroupSelected][0];
+                        }
+                    }
+                }
+            }
+            
+            //left click conditions
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+            {
+                mouseXPos = sf::Mouse::getPosition(*window).x;
+                mouseYPos = sf::Mouse::getPosition(*window).y;
+                
+                //if clicked in right section
+                if (mouseXPos >= RIGHT_SECTION_WIDTH)
+                {
+                    focusRight = true;
+                    mouseXPos -= WINDOW_WIDTH - RIGHT_SECTION_WIDTH;
+                    int selectedColumn, selectedRow;
+                    if (mouseXPos%tileWidth == 0) selectedColumn = mouseXPos/tileWidth;
+                    else selectedColumn = mouseXPos/tileWidth + 1;
+                    if (mouseYPos%tileHeight == 0) selectedRow = mouseYPos/tileHeight;
+                    else selectedRow = mouseYPos/tileHeight + 1;
+                    tileSelected = ((selectedRow - 1)*RScolumns + selectedColumn) - 1;
+                    if (tileSelected < tileSelectionSprites[tileGroupSelected].size())
+                    {
+                        tileOutline.setPosition(tileSelectionSprites[tileGroupSelected][tileSelected].x + 5, tileSelectionSprites[tileGroupSelected][tileSelected].y + 5);
+                        tileBuffer = tileSelectionSprites[tileGroupSelected][tileSelected];
+                    }
+                }
+            }
         }
         
         //CHANGES
         
         //RENDER
         window->clear();
+        
+        for (int i = 0; i < tileSelectionSprites[tileGroupSelected].size(); ++i)
+            window->draw(tileSelectionSprites[tileGroupSelected][i]);
+        
         window->draw(*rightSection);
+        
+        window->draw(tileOutline);
+        
+        for (int i = 0; i < grid.size(); ++i)
+            for (int j = 0; j < grid[i].size(); ++j)
+                if (grid[i][j].getID() != 0)
+                    window->draw(grid[i][j]);
+        
         for (int i = 0; i < rows.size(); ++i) { window->draw(rows[i]); }
+        
         for (int i = 0; i < columns.size(); ++i) { window->draw(columns[i]); }
         
         //DRAW
