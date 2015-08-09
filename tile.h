@@ -14,8 +14,10 @@ public:
     Tile();
     Tile(int ID);
     int getID();
+    void setID(int ID);
     int x;
     int y;
+    void makeObstacle();
 private:
     int ID;
 };

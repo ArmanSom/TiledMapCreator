@@ -21,3 +21,13 @@ int Tile::getID()
 {
     return ID;
 }
+
+void Tile::setID(int ID)
+{
+    Tile::ID = ID;
+}
+
+void Tile::makeObstacle()
+{
+    Tile::ID = Tile::ID * -1;
+}

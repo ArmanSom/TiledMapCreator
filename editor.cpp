@@ -9,6 +9,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <fstream>
 
 //constructor
 Editor::Editor()
@@ -32,6 +33,9 @@ Editor::Editor()
     //set arbitrary tile defaults
     tileWidth = 30;
     tileHeight = 30;
+    
+    //set map count to allow for creation of multiple txt map files
+    mapCount = 0;
 }
 
 //destructor
@@ -48,6 +52,7 @@ void Editor::run()
     {
         if (level == INTRO) intro();
         if (level == EDITOR) editor();
+        if (level == RESTART) level = EDITOR;
     }
     
     window->close();
@@ -169,7 +174,7 @@ void Editor::intro()
                     else if (rowsEntered == false && input != "")
                     {
                         std::stringstream ss(input);
-                        ss >> tileRows;
+                        ss >> tileColumns;
                         rowsEntered = true;
                         rows = displayedInput;
                         input = "";
@@ -180,7 +185,7 @@ void Editor::intro()
                     else if (columnsEntered == false && input != "")
                     {
                         std::stringstream ss(input);
-                        ss >> tileColumns;
+                        ss >> tileRows;
                         columnsEntered = true;
                         columns = displayedInput;
                         input = "";
@@ -239,19 +244,21 @@ void Editor::editor()
     /* TEST */
     tileWidth = 70;
     tileHeight = 70;
-    tileRows = 5;
-    tileColumns = 5;
+    tileRows = 12;
+    tileColumns = 10;
     tileFileName = "Resources/Images/tilesheet.png";
     tileMargins = 2;
     /* TEST */
     tileSheet.loadFromFile(tileFileName);
     
     //create vector to hold row outlines
-    std::vector<sf::RectangleShape> rows(tileRows);
+    int gridRows = WINDOW_HEIGHT/tileHeight;
+    int gridColumns = (WINDOW_WIDTH - RIGHT_SECTION_WIDTH)/tileWidth;
+    std::vector<sf::RectangleShape> rows(gridRows);
     int count = 0;
-    while (count < tileRows)
+    while (count < gridRows)
     {
-        sf::RectangleShape rect(sf::Vector2f(tileWidth*tileColumns, tileHeight));
+        sf::RectangleShape rect(sf::Vector2f(tileWidth*gridColumns, tileHeight));
         rect.setFillColor(sf::Color::Transparent);
         rect.setOutlineColor(sf::Color::White);
         rect.setOutlineThickness(1);
@@ -260,11 +267,11 @@ void Editor::editor()
         ++count;
     }
     //create vector to hold column outlines
-    std::vector<sf::RectangleShape> columns(tileColumns);
+    std::vector<sf::RectangleShape> columns(gridColumns);
     count = 0;
-    while (count < tileColumns)
+    while (count < gridColumns)
     {
-        sf::RectangleShape rect(sf::Vector2f(tileWidth, tileHeight*tileRows));
+        sf::RectangleShape rect(sf::Vector2f(tileWidth, tileHeight*gridRows));
         rect.setFillColor(sf::Color::Transparent);
         rect.setOutlineColor(sf::Color::White);
         rect.setOutlineThickness(1);
@@ -344,6 +351,8 @@ void Editor::editor()
     int mouseXPos = 0;
     int mouseYPos = 0;
     int tileSelected = 0;
+    int selectedGridRow = 0;
+    int selectedGridColumn = 0;
     
     //MAIN LOOP
     while (level == EDITOR)
@@ -383,6 +392,58 @@ void Editor::editor()
                         }
                     }
                 }
+                
+                //if mouse last clicked left
+                else if (focusRight == false)
+                {
+                    //backspace condition
+                    if (event.key.code == sf::Keyboard::BackSpace)
+                    {
+                        grid[selectedGridRow][selectedGridColumn].setID(0);
+                    }
+                    
+                    //o condition
+                    if (event.key.code == sf::Keyboard::O)
+                    {
+                        if (grid[selectedGridRow][selectedGridColumn].getID() > 0)
+                            grid[selectedGridRow][selectedGridColumn].makeObstacle();
+                    }
+                    
+                    //n condition
+                    if (event.key.code == sf::Keyboard::N)
+                    {
+                        if (grid[selectedGridRow][selectedGridColumn].getID() < 0)
+                            grid[selectedGridRow][selectedGridColumn].makeObstacle();
+                    }
+                    
+                    //return condition
+                    if (event.key.code == sf::Keyboard::Return)
+                    {
+                        std::stringstream ss;
+                        ss << "Resources/Texts/map" << mapCount << ".txt";
+                        std::fstream streamOut;
+                        streamOut.open(ss.str());
+                        
+                        for (int i = 0; i < grid.size(); ++i)
+                        {
+                            for (int j = 0; j < grid[i].size(); ++j)
+                            {
+                                streamOut << grid[i][j].getID() << " ";
+                                if (j == grid[i].size() - 1)
+                                    streamOut << "\n";
+                            }
+                        }
+                        
+                        streamOut.close();
+                    }
+                    
+                    //escape condition
+                    if (event.key.code == sf::Keyboard::Escape)
+                    {
+                        level = RESTART;
+                        ++mapCount;
+                    }
+                }
             }
             
             //left click conditions
@@ -392,7 +453,7 @@ void Editor::editor()
                 mouseYPos = sf::Mouse::getPosition(*window).y;
                 
                 //if clicked in right section
-                if (mouseXPos >= RIGHT_SECTION_WIDTH)
+                if (mouseXPos >= WINDOW_WIDTH - RIGHT_SECTION_WIDTH)
                 {
                     focusRight = true;
                     mouseXPos -= WINDOW_WIDTH - RIGHT_SECTION_WIDTH;
@@ -406,6 +467,21 @@ void Editor::editor()
                     {
                         tileOutline.setPosition(tileSelectionSprites[tileGroupSelected][tileSelected].x + 5, tileSelectionSprites[tileGroupSelected][tileSelected].y + 5);
                         tileBuffer = tileSelectionSprites[tileGroupSelected][tileSelected];
+                    }
+                }
+                
+                //if clicked in left section
+                else if (mouseXPos < WINDOW_WIDTH - RIGHT_SECTION_WIDTH)
+                {
+                    focusRight = false;
+                    if (mouseYPos%tileHeight == 0) selectedGridColumn = mouseYPos/tileHeight;
+                    else selectedGridColumn = mouseYPos/tileHeight;
+                    if (mouseXPos%tileWidth == 0) selectedGridRow = mouseXPos/tileWidth;
+                    else selectedGridRow = mouseXPos/tileWidth;
+                    if (selectedGridRow < grid.size() && selectedGridColumn < grid[selectedGridRow].size())
+                    {
+                        grid[selectedGridRow][selectedGridColumn] = tileBuffer;
+                        grid[selectedGridRow][selectedGridColumn].setPosition(selectedGridRow*tileWidth, selectedGridColumn*tileHeight);
                     }
                 }
             }

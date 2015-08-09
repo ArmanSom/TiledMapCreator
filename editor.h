@@ -14,7 +14,7 @@ class Editor
 public:
     //constants and enums
     const int WINDOW_WIDTH = 1200, WINDOW_HEIGHT = 700, RIGHT_SECTION_WIDTH = WINDOW_WIDTH/4;
-    enum Level { INTRO, EDITOR, END };
+    enum Level { INTRO, EDITOR, RESTART, END };
     
     //functions
     Editor();
@@ -33,6 +33,7 @@ private:
     int tileColumns;
     std::string tileFileName;
     int tileMargins;
+    int mapCount;
 };
 
 #endif
