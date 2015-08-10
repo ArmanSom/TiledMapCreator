@@ -238,14 +238,6 @@ void Editor::editor()
 {
     //load tilesheet
     sf::Texture tileSheet;
-    /* TEST */
-    tileWidth = 70;
-    tileHeight = 70;
-    tileRows = 10;
-    tileColumns = 12;
-    tileFileName = "images/tilesheet.png";
-    tileMargins = 2;
-    /* TEST */
     tileSheet.loadFromFile(tileFileName);
     
     //create vector to hold row outlines
