@@ -146,7 +146,7 @@ void Editor::intro()
                 if (event.key.code == sf::Keyboard::BackSpace && input.length() > 0)
                     input.erase(input.length()-1, 1);
                 
-                //enter condition
+                //return condition
                 if (event.key.code == sf::Keyboard::Return)
                 {
                     if (widthEntered == false && input != "")
@@ -174,7 +174,7 @@ void Editor::intro()
                     else if (rowsEntered == false && input != "")
                     {
                         std::stringstream ss(input);
-                        ss >> tileColumns;
+                        ss >> tileRows;
                         rowsEntered = true;
                         rows = displayedInput;
                         input = "";
@@ -185,7 +185,7 @@ void Editor::intro()
                     else if (columnsEntered == false && input != "")
                     {
                         std::stringstream ss(input);
-                        ss >> tileRows;
+                        ss >> tileColumns;
                         columnsEntered = true;
                         columns = displayedInput;
                         input = "";
@@ -244,8 +244,8 @@ void Editor::editor()
     /* TEST */
     tileWidth = 70;
     tileHeight = 70;
-    tileRows = 12;
-    tileColumns = 10;
+    tileRows = 10;
+    tileColumns = 12;
     tileFileName = "Resources/Images/tilesheet.png";
     tileMargins = 2;
     /* TEST */
@@ -342,7 +342,7 @@ void Editor::editor()
         for (int j = 0; j < tileColumns; ++j)
         {
             grid[i].push_back(Tile());
-            grid[i][j].setPosition(tileWidth*i, tileHeight*j);
+            grid[i][j].setPosition(tileWidth*j, tileHeight*i);
         }
     
     //create trackers
@@ -422,7 +422,7 @@ void Editor::editor()
                         std::stringstream ss;
                         ss << "Resources/Texts/map" << mapCount << ".txt";
                         std::fstream streamOut;
-                        streamOut.open(ss.str());
+                        streamOut.open(ss.str(), std::ios::out);
                         
                         for (int i = 0; i < grid.size(); ++i)
                         {
@@ -442,6 +442,21 @@ void Editor::editor()
                     {
                         level = RESTART;
                         ++mapCount;
+                    }
+                    
+                    //r condition
+                    if (event.key.code == sf::Keyboard::R)
+                    {
+                        ++tileRows;
+                        grid.push_back(std::vector<Tile>(tileColumns));
+                    }
+                    
+                    //c condition
+                    if (event.key.code == sf::Keyboard::C)
+                    {
+                        ++tileColumns;
+                        for (int i = 0; i < tileRows; ++i)
+                            grid[i].push_back(Tile());
                     }
                 }
             }
@@ -470,18 +485,18 @@ void Editor::editor()
                     }
                 }
                 
-                //if clicked in left section
-                else if (mouseXPos < WINDOW_WIDTH - RIGHT_SECTION_WIDTH)
+                //if clicked in left section (that is within grid)
+                else if (mouseXPos < gridColumns*tileWidth)
                 {
                     focusRight = false;
-                    if (mouseYPos%tileHeight == 0) selectedGridColumn = mouseYPos/tileHeight;
-                    else selectedGridColumn = mouseYPos/tileHeight;
-                    if (mouseXPos%tileWidth == 0) selectedGridRow = mouseXPos/tileWidth;
-                    else selectedGridRow = mouseXPos/tileWidth;
+                    if (mouseXPos%tileWidth == 0) selectedGridColumn = mouseXPos/tileWidth;
+                    else selectedGridColumn = mouseXPos/tileWidth;
+                    if (mouseYPos%tileHeight == 0) selectedGridRow = mouseYPos/tileHeight;
+                    else selectedGridRow = mouseYPos/tileHeight;
                     if (selectedGridRow < grid.size() && selectedGridColumn < grid[selectedGridRow].size())
                     {
                         grid[selectedGridRow][selectedGridColumn] = tileBuffer;
-                        grid[selectedGridRow][selectedGridColumn].setPosition(selectedGridRow*tileWidth, selectedGridColumn*tileHeight);
+                        grid[selectedGridRow][selectedGridColumn].setPosition(selectedGridColumn*tileWidth, selectedGridRow*tileHeight);
                     }
                 }
             }
