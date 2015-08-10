@@ -18,10 +18,7 @@ Editor::Editor()
     window = new sf::RenderWindow(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Tiled Map Creator");
     
     //set level to intro screen
-    //level = INTRO;
-    /*TEST*/
-    level = EDITOR;
-    /*TEST*/
+    level = INTRO;
     
     //create outline for right section
     rightSection = new sf::RectangleShape(sf::Vector2f(RIGHT_SECTION_WIDTH, WINDOW_HEIGHT));
@@ -63,7 +60,7 @@ void Editor::intro()
 {
     //create title text
     sf::Font font;
-    font.loadFromFile("Resources/Fonts/retro.ttf");
+    font.loadFromFile("fonts/retro.ttf");
     sf::Text titleText;
     titleText.setFont(font);
     titleText.setString("Welcome to ArmanSom's Tiled Map Creator!");
@@ -195,7 +192,7 @@ void Editor::intro()
                     
                     else if (fileNameEntered == false && input != "")
                     {
-                        tileFileName = "Resources/Images/" + input;
+                        tileFileName = "images/" + input;
                         fileNameEntered = true;
                         fileName = displayedInput;
                         input = "";
@@ -246,7 +243,7 @@ void Editor::editor()
     tileHeight = 70;
     tileRows = 10;
     tileColumns = 12;
-    tileFileName = "Resources/Images/tilesheet.png";
+    tileFileName = "images/tilesheet.png";
     tileMargins = 2;
     /* TEST */
     tileSheet.loadFromFile(tileFileName);
@@ -353,6 +350,8 @@ void Editor::editor()
     int tileSelected = 0;
     int selectedGridRow = 0;
     int selectedGridColumn = 0;
+    int firstRenderedRow = 0;
+    int firstRenderedColumn = 0;
     
     //MAIN LOOP
     while (level == EDITOR)
@@ -381,6 +380,7 @@ void Editor::editor()
                             tileBuffer = tileSelectionSprites[tileGroupSelected][0];
                         }
                     }
+                    
                     //up condition
                     if (event.key.code == sf::Keyboard::Up)
                     {
@@ -399,7 +399,7 @@ void Editor::editor()
                     //backspace condition
                     if (event.key.code == sf::Keyboard::BackSpace)
                     {
-                        grid[selectedGridRow][selectedGridColumn].setID(0);
+                        grid[selectedGridRow + firstRenderedRow][selectedGridColumn + firstRenderedColumn].setID(0);
                     }
                     
                     //o condition
@@ -420,7 +420,7 @@ void Editor::editor()
                     if (event.key.code == sf::Keyboard::Return)
                     {
                         std::stringstream ss;
-                        ss << "Resources/Texts/map" << mapCount << ".txt";
+                        ss << "texts/map" << mapCount << ".txt";
                         std::fstream streamOut;
                         streamOut.open(ss.str(), std::ios::out);
                         
@@ -457,6 +457,54 @@ void Editor::editor()
                         ++tileColumns;
                         for (int i = 0; i < tileRows; ++i)
                             grid[i].push_back(Tile());
+                    }
+                    
+                    //right condition
+                    if (event.key.code == sf::Keyboard::Right)
+                    {
+                        if (firstRenderedColumn + gridColumns < tileColumns)
+                        {
+                            for (int i = firstRenderedRow; i < firstRenderedRow + gridRows; ++i)
+                                for (int j = firstRenderedColumn; j < firstRenderedColumn + gridColumns; ++j)
+                                    grid[i][j].move(-tileWidth, 0);
+                            ++firstRenderedColumn;
+                        }
+                    }
+                    
+                    //left condition
+                    if (event.key.code == sf::Keyboard::Left)
+                    {
+                        if (firstRenderedColumn > 0)
+                        {
+                            --firstRenderedColumn;
+                            for (int i = firstRenderedRow; i < firstRenderedRow + gridRows; ++i)
+                                for (int j = firstRenderedColumn; j < firstRenderedColumn + gridColumns; ++j)
+                                    grid[i][j].move(tileWidth, 0);
+                        }
+                    }
+                    
+                    //down condition
+                    if (event.key.code == sf::Keyboard::Down)
+                    {
+                        if (firstRenderedRow + gridRows < tileRows)
+                        {
+                            for (int i = firstRenderedRow; i < firstRenderedRow + gridRows; ++i)
+                                for (int j = firstRenderedColumn; j < firstRenderedColumn + gridColumns; ++j)
+                                    grid[i][j].move(0, -tileHeight);
+                            ++firstRenderedRow;
+                        }
+                    }
+                    
+                    //up condition
+                    if (event.key.code == sf::Keyboard::Up)
+                    {
+                        if (firstRenderedRow > 0)
+                        {
+                            --firstRenderedRow;
+                            for (int i = firstRenderedRow; i < firstRenderedRow + gridRows; ++i)
+                                for (int j = firstRenderedColumn; j < firstRenderedColumn + gridColumns; ++j)
+                                    grid[i][j].move(0, tileHeight);
+                        }
                     }
                 }
             }
@@ -495,8 +543,8 @@ void Editor::editor()
                     else selectedGridRow = mouseYPos/tileHeight;
                     if (selectedGridRow < grid.size() && selectedGridColumn < grid[selectedGridRow].size())
                     {
-                        grid[selectedGridRow][selectedGridColumn] = tileBuffer;
-                        grid[selectedGridRow][selectedGridColumn].setPosition(selectedGridColumn*tileWidth, selectedGridRow*tileHeight);
+                        grid[selectedGridRow + firstRenderedRow][selectedGridColumn + firstRenderedColumn] = tileBuffer;
+                        grid[selectedGridRow + firstRenderedRow][selectedGridColumn + firstRenderedColumn].setPosition(selectedGridColumn*tileWidth, selectedGridRow*tileHeight);
                     }
                 }
             }
@@ -514,8 +562,8 @@ void Editor::editor()
         
         window->draw(tileOutline);
         
-        for (int i = 0; i < grid.size(); ++i)
-            for (int j = 0; j < grid[i].size(); ++j)
+        for (int i = firstRenderedRow; i < grid.size() && i < firstRenderedRow + gridRows; ++i)
+            for (int j = firstRenderedColumn; j < grid[i].size() && j < firstRenderedColumn + gridColumns; ++j)
                 if (grid[i][j].getID() != 0)
                     window->draw(grid[i][j]);
         
