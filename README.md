@@ -3,8 +3,8 @@
 
 - Place your spritesheet in resources/images
 
-- Editing controls:    
-BACKSPACE: delete tile    
+- Editing controls:  
+BACKSPACE: delete tile  
 O: flag tile as obstacle (makes tile code negative)  
 N: flag tile as non-obstacle. C: Add empty column  
 R: Add empty row  
