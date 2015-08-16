@@ -456,10 +456,10 @@ void Editor::editor()
                     {
                         if (firstRenderedColumn + gridColumns < tileColumns)
                         {
+                            ++firstRenderedColumn;
                             for (int i = firstRenderedRow; i < firstRenderedRow + gridRows; ++i)
                                 for (int j = firstRenderedColumn; j < firstRenderedColumn + gridColumns; ++j)
-                                    grid[i][j].move(-tileWidth, 0);
-                            ++firstRenderedColumn;
+                                    grid[i][j].setPosition(tileWidth*(j - firstRenderedColumn), tileHeight*(i - firstRenderedRow));
                         }
                     }
                     
@@ -471,7 +471,7 @@ void Editor::editor()
                             --firstRenderedColumn;
                             for (int i = firstRenderedRow; i < firstRenderedRow + gridRows; ++i)
                                 for (int j = firstRenderedColumn; j < firstRenderedColumn + gridColumns; ++j)
-                                    grid[i][j].move(tileWidth, 0);
+                                    grid[i][j].setPosition(tileWidth*(j - firstRenderedColumn), tileHeight*(i - firstRenderedRow));
                         }
                     }
                     
@@ -480,10 +480,10 @@ void Editor::editor()
                     {
                         if (firstRenderedRow + gridRows < tileRows)
                         {
+                            ++firstRenderedRow;
                             for (int i = firstRenderedRow; i < firstRenderedRow + gridRows; ++i)
                                 for (int j = firstRenderedColumn; j < firstRenderedColumn + gridColumns; ++j)
-                                    grid[i][j].move(0, -tileHeight);
-                            ++firstRenderedRow;
+                                    grid[i][j].setPosition(tileWidth*(j - firstRenderedColumn), tileHeight*(i - firstRenderedRow));
                         }
                     }
                     
@@ -495,7 +495,7 @@ void Editor::editor()
                             --firstRenderedRow;
                             for (int i = firstRenderedRow; i < firstRenderedRow + gridRows; ++i)
                                 for (int j = firstRenderedColumn; j < firstRenderedColumn + gridColumns; ++j)
-                                    grid[i][j].move(0, tileHeight);
+                                    grid[i][j].setPosition(tileWidth*(j - firstRenderedColumn), tileHeight*(i - firstRenderedRow));
                         }
                     }
                 }
