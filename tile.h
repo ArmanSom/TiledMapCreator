@@ -17,7 +17,7 @@ public:
     void setID(int ID);
     int x;
     int y;
-    void makeObstacle();
+    void changeObstacle();
 private:
     int ID;
 };

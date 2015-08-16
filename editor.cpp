@@ -397,15 +397,15 @@ void Editor::editor()
                     //o condition
                     if (event.key.code == sf::Keyboard::O)
                     {
-                        if (grid[selectedGridRow][selectedGridColumn].getID() > 0)
-                            grid[selectedGridRow][selectedGridColumn].makeObstacle();
+                        if (grid[selectedGridRow][selectedGridColumn].getID() < 0)
+                            grid[selectedGridRow][selectedGridColumn].changeObstacle();
                     }
                     
                     //n condition
                     if (event.key.code == sf::Keyboard::N)
                     {
-                        if (grid[selectedGridRow][selectedGridColumn].getID() < 0)
-                            grid[selectedGridRow][selectedGridColumn].makeObstacle();
+                        if (grid[selectedGridRow][selectedGridColumn].getID() > 0)
+                            grid[selectedGridRow][selectedGridColumn].changeObstacle();
                     }
                     
                     //return condition

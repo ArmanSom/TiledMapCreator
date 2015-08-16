@@ -27,7 +27,7 @@ void Tile::setID(int ID)
     Tile::ID = ID;
 }
 
-void Tile::makeObstacle()
+void Tile::changeObstacle()
 {
     Tile::ID = Tile::ID * -1;
 }
